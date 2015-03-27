@@ -1,0 +1,157 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 13 11:14:38 2014
+
+@author: Jaslin
+"""
+
+import numpy as np
+from pandas import DataFrame, Series
+from lmfit import minimize, Parameters
+import pandas as pd
+import math as m
+import matplotlib.pyplot as plt
+import sys
+import os
+import numpy as np
+import sys
+
+
+def g_all(b,t,ci,data=None,sigma=None):
+   if (gfit_flag == 1):
+#       print "printing passed conc"
+#       print ci
+       D=b['D'].value
+       wxy=b['wxy'].value
+       wz=b['wz'].value
+#       print wxy
+#       print wz
+       co1=float(ci)
+       v=wxy*wxy*wz*np.pi**1.5
+       N=co1*6.022e-1*v
+        
+       g=1+1/N/(1+4*D*t/wxy/wxy)/np.sqrt(1+4*D*t/wz/wz)
+        
+   if (gfit_flag == 0): 
+       for i in range(6):
+#            print gfit_flag
+            C=c[i]
+#            print "printing C in g"
+#            print C
+            
+            D=b['D'].value
+            wxy=b['wxy'].value
+            wz=b['wz'].value
+#            print wxy
+#            print wz
+            v=wxy*wxy*wz*np.pi**1.5
+            N=C*6.022e-1*v
+            
+            g=1+1/N/(1+4*D*t/wxy/wxy)/np.sqrt(1+4*D*t/wz/wz)
+            #print g
+   if data is None:
+        return g
+   return (data[i]-g)/sigma[i]
+    
+def read_corrfile(file):
+    f=open(file,'r')
+
+    for line in f:
+        if line.startswith('[Para'):
+            break
+    parameters=[]
+    for line in f:
+        if line.startswith('[Corr'):
+            break
+        parameters.append(line)
+    corrfcts=[]
+    for line in f:
+        if line.startswith('[Raw'):
+            break
+        corrfcts.append([float(a) for a in line.split()])
+    for line in f:
+        if line.startswith('[IntensityHistory'):
+            break
+    intensity=[]
+    for line in f:
+        if line.startswith('[Overflow'):
+            break
+        if line.startswith('Trace'):
+            trace=line
+        else:
+            intensity.append([float(a) for a in line.split()])
+    f.close()
+    return parameters,corrfcts,intensity
+    
+list = pd.read_table('B.txt')
+first_str = list.filename.str.split('_').str.get(0)
+file_seq = first_str.value_counts().sort_index()
+concentration = list['conc(nM)'].value_counts().sort_index().index.values
+
+patternfile = file_seq.index.values
+occurence = file_seq.values
+combinedarray = np.vstack([patternfile,occurence,concentration]).T
+
+
+b=Parameters()
+b.add('wxy',value=0.25,vary=True)
+b.add('wz',value=0.4,vary=True)
+b.add('D',value=412.53,vary=False)
+c=[]
+corr_mean=None
+corr_sigma=None
+
+for i in range(len(patternfile)):
+    corr_array=None           
+    L=combinedarray[i][1]    #get values from second row of the array n times
+    for p in range(L):
+        p1 = str(p+1)
+        file_name=combinedarray[i][0]+"_"+ p1 +".SIN"  #get the pattern and combine to create filename
+        print file_name,combinedarray[i][2]            #print filename along with the conc. used
+        para, corrfcts, intensity = read_corrfile(file_name)
+        corrfcts=DataFrame(np.array(corrfcts[:-1]),columns=['delta_t','corrA','corrB','corrAB','corrBA'])
+                    
+        cropcorr=corrfcts[corrfcts['delta_t']>=1e-6]
+        cropcorr=cropcorr[cropcorr['delta_t']<=0.1]
+            
+        if corr_array is None:
+             corr_array=np.vstack((cropcorr['corrAB'],cropcorr['corrBA']))
+        else:
+            corr_array=np.vstack((corr_array,cropcorr['corrAB'],cropcorr['corrBA']))
+            
+    if corr_mean is None:
+        corr_mean=np.mean(corr_array,axis=0)
+    else:
+        corr_mean=np.vstack((corr_mean,np.mean(corr_array,axis=0)))
+    if corr_sigma is None:
+        corr_sigma=np.std(corr_array,axis=0)
+    else:
+        corr_sigma=np.vstack((corr_sigma,np.std(corr_array,axis=0)))
+        
+    conc = float(combinedarray[i][2])
+    b.add('C',value=conc,vary=False)
+    c.append(conc)      
+                
+    
+gfit_flag=0
+out=minimize(g_all, b, args=(cropcorr['delta_t'],c,corr_mean, corr_sigma))
+print b
+
+gfit=[]
+gfit_flag=1
+for j in range(len(c)):
+    print combinedarray[j][2]
+    gfit=g_all(b,cropcorr['delta_t'],combinedarray[j][2])
+    plt.figure()
+    plt.subplot(2,1,1)
+    plt.title('Cross-correlation function ')
+    plt.errorbar(cropcorr['delta_t'],corr_mean[j],yerr=corr_sigma[j],fmt='o')
+    plt.plot(cropcorr['delta_t'],gfit)
+    plt.xscale('log')
+    plt.ylabel('g(t)')
+    plt.xlabel('delta t in sec')
+    plt.subplot(2,1,2)
+    plt.semilogx(cropcorr['delta_t'],corr_mean[j]-gfit,'o')
+    plt.ylabel('Residuals')
+    plt.xlabel('delta t in sec')
+    plt.show()    
