@@ -1,0 +1,138 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Apr 03 22:21:56 2014
+
+@author: Jaslin
+"""
+
+#work done by kartikey grover and jaslin kalra
+
+import numpy as np
+import matplotlib.pylab as plt
+from scipy.stats import chi2
+from numpy.linalg import inv
+
+z,z1,z0,A,B,G =[],[],[],[],[],[]
+
+#obtaining sums for chi_left
+def linefit(x,y,sigma):
+    x=np.array(x)
+    y=np.array(y)
+    sigma=np.array(sigma)
+    ssq=np.square(sigma)
+    
+    S=np.sum(1/ssq)
+    Sx=np.sum(x/ssq)
+    Sy=np.sum(y_left/ssq)
+    Sxx=np.sum(np.square(x)/ssq)
+    Sxy=np.sum(x*y/ssq)
+     
+    return S,Sx,Sy,Sxx,Sxy
+
+#obtaining sums for chi_right 
+def linefit1(x,y,sigma):
+    x=np.array(x)
+    y=np.array(y)
+    sigma=np.array(sigma) 
+    ssq=np.square(sigma)
+    
+    S1=np.sum(1/ssq)
+    S1x=np.sum(x/ssq)
+    S1y=np.sum(y/ssq)
+    S1xx=np.sum(np.square(x)/ssq)
+    S1xy=np.sum(x*y/ssq)    
+    
+    return S1,S1x,S1y,S1xx,S1xy
+    
+#generating dataset here
+    
+x=np.linspace(-5,5,11)
+chisq_total=[]
+delta_y=1
+
+for i in range(1000):
+    chisq_average=0  
+    chisq=0
+    chisq1=0
+
+    x_left,y_left,x_right,y_right,error_left,error_right=[],[],[],[],[],[]
+        
+    a=np.random.randint(0,2,size=11)
+    error=np.where(a,np.random.normal(-delta_y,0.1,11),np.random.normal(delta_y,0.1,11))
+
+    
+    y=2*x+error
+    
+    l= len(error)
+    for j in range (l):  #sorting data with respect to the error greater or less than zero
+        if error[j]<0:
+            error_left.append(error[j])
+            x_left.append(x[j])
+            y_left.append(y[j])
+
+        else:
+            error_right.append(error[j])
+            x_right.append(x[j])
+            y_right.append(y[j])
+            
+            
+    leflen= len(x_left)     
+    le=linefit(x_left,y_left,np.ones(leflen)*0.1) #returns sums calculated for the left side
+    rilen= len(x_right)
+    ri=linefit1(x_right,y_right,np.ones(rilen)*0.1) #returns sums calculated for the right side
+    
+    col= [[-le[4]-ri[4]],[-le[2]-ri[2]],[le[2]-ri[2]]] 
+          
+    first= [[-le[1]-ri[1],-le[1]+ri[1],-le[3]-ri[3]],[-le[0]-ri[0],-le[0]+ri[0],-le[1]-ri[1]],[le[0]-ri[0],le[0]+ri[0],le[1]-ri[1]]]
+    
+    firstinv=inv(first)
+    value=np.dot(firstinv,col)
+    a=value[0]
+    g=value[1]
+    b=value[2]
+    
+    al=(np.ones(leflen))*(a+g)
+    ar=(np.ones(rilen))*(a-g)
+    bl=(np.ones(leflen))*b
+    br=(np.ones(rilen))*b
+    
+    chisq=np.sum(np.square((y_left-(al)-(bl)*(x_left))/0.1))+ np.sum(np.square((y_right-(ar)-(br)*(x_right))/0.1))
+    z.append(chisq)
+    A.append(a)
+    G.append(g)
+    B.append(b)
+    
+chisqf=np.array(z)
+
+A1=np.array(A)
+B1=np.array(B)
+G1=np.array(G)
+Amean=np.mean(A1)
+Bmean=np.mean(B1)
+Gmean=np.mean(G1)
+
+print Amean
+print Bmean
+print Gmean
+
+chi=np.linspace(0,50,200)
+chi2distr=chi2.pdf(chi,8)
+#print chi2distr
+
+plt.figure()
+plt.hist(chisqf,bins=100,range=(0,50))
+plt.plot(chi,chi2distr*500)
+plt.show()
+
+yfit=Amean-Gmean +Bmean*x
+y1fit=Amean+Gmean+Bmean*x
+
+plt.figure()
+plt.plot(x,y,"or",label='data')
+plt.plot(x,yfit,label='model')
+plt.plot(x,y1fit,label='model')
+plt.ylabel('y vlaues')
+plt.xlabel('x values')
+plt.title('Two Straight lines fit of data points')
+legend(loc='lower right')
+plt.show()
