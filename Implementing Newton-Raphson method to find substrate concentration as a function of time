@@ -1,0 +1,56 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Apr 09 19:15:31 2014
+
+@author: Jaslin
+"""
+
+import numpy as np
+import math as m
+import matplotlib.pyplot as plt
+
+
+#calculating the f(s)
+
+def f(s,t):
+    s_calc=km*m.log(si/s)+(si-s)-vmax*t
+    return s_calc
+    
+#calculating the f'(s)
+    
+def df(s):
+    ds=(-km/s)-1
+    return ds
+    
+#implementing Newton's method
+
+def Newton(f,df):
+    si=1
+    tolerance=10**-7
+    for i in range(len(t)):
+        error=1
+        
+        while error>tolerance:
+            s1=si-(f(si,t[i])/df(si))
+#            print s1
+            error=((s1-si)/si)
+            si=s1
+#            print si
+        r.append(si)
+            
+    return r
+
+si=1
+vmax=0.05
+km=0.5
+r=[]    
+t=np.linspace(0,200,2000)  
+
+#root finder function  
+r=Newton(f,df)
+#print r
+
+plt.plot(t,r)
+plt.title('Substrate concentration as a function of time',fontsize=18)
+plt.xlabel('Time(sec)', fontsize = 16)
+plt.ylabel('Substrate Concentration(mM)', fontsize = 16)
