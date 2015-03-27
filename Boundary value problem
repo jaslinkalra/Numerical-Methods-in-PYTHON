@@ -1,0 +1,64 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Apr 30 16:28:12 2014
+
+@author: Jaslin
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Apr 27 20:37:45 2014
+
+@author: Jaslin
+"""
+
+from scipy import integrate
+import scipy.optimize as opt
+import pandas as pd
+import numpy as np
+import scipy as sp
+import matplotlib.pyplot as plt
+
+def dX(X,t):
+    
+    dx=X[2]  #Vx
+    dy=X[3]  #Vy
+    
+    mass=20   #kg
+    c=0.00023 #kg/m
+    g=9.80665 #m/s^2
+     
+    dxx=(-c/mass)*np.sqrt((dx**2)+(dy**2))*dx      #dVx
+    dyy=((-c/mass)*np.sqrt((dx**2)+(dy**2))*dy)-g  #dVy
+    
+    return [dx,dy,dxx,dyy]
+    
+def distance(p):
+    
+    x_init=[0,0,p[0]*np.cos(p[1]),p[0]*np.sin(p[1])] #x,y,Vx,Vy
+    t=np.linspace(0,10,1000)
+    X=integrate.odeint(dX,x_init,t)
+    x,y,dx,dy=X.T
+    return [x[-1]-8000,y[-1]]
+    
+v0=800 #m/s^2
+alpha0=0.06 #radians
+t=np.linspace(0,10,1000)
+x_init=[0,0,v0*np.cos(alpha0),v0*np.sin(alpha0)]
+result=integrate.odeint(dX,x_init,t)
+x0,y0,dx,dy =result.T
+
+
+
+result=opt.fsolve(distance,[v0,alpha0])
+v,alpha = result.T
+x_init_min=[0,0,v*np.cos(alpha),v*np.sin(alpha)]
+min_result=integrate.odeint(dX,x_init_min,t)
+x1,y1,dx,dy =min_result.T
+
+plt.plot(x0,y0,label='initial values')
+plt.plot(x1,y1, label='minimized values')
+plt.title('Projectile Motion',fontsize=18)
+plt.xlabel('Distance in m', fontsize = 16)
+plt.ylabel('Height in m', fontsize = 16)
+legend(loc='upper right',fontsize=12)
