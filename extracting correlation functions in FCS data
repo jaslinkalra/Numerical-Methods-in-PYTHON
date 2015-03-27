@@ -1,0 +1,93 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Feb 23 00:04:27 2014
+
+@author: Jaslin
+"""
+
+import numpy as np
+from pandas import DataFrame, Series
+import pandas as pd
+import math as m
+import matplotlib.pyplot as plt
+import sys
+import os
+from lmfit import minimize, Parameters
+
+
+def g(b,t,data=None):
+    N=b['N'].value
+    D=b['D'].value
+    wxy=b['wxy'].value
+    wz=b['wz'].value
+    
+    g=1+1/N/(1+4*D*t/wxy/wxy)/np.sqrt(1+4*D*t/wz/wz)
+
+    if data is None:
+        return g
+    return g-data
+
+def read_corrfile(file):
+    f=open(file,'r')
+
+    for line in f:
+        if line.startswith('[Para'):
+            break
+    parameters=[]
+    for line in f:
+        if line.startswith('[Corr'):
+            break
+        parameters.append(line)
+    corrfcts=[]
+    for line in f:
+        if line.startswith('[Raw'):
+            break
+        corrfcts.append([float(a) for a in line.split()])
+    for line in f:
+        if line.startswith('[IntensityHistory'):
+            break
+    intensity=[]
+    for line in f:
+        if line.startswith('[Overflow'):
+            break
+        if line.startswith('Trace'):
+            trace=line
+        else:
+            intensity.append([float(a) for a in line.split()])
+    f.close()
+    return parameters,corrfcts,intensity
+
+filename='B01562_4.SIN'
+para, corrfcts, intensity = read_corrfile(filename)
+
+corrfcts=DataFrame(np.array(corrfcts[:-1]),columns=['delta_t','corrA','corrB','corrAB','corrBA'])
+intensity=DataFrame(np.array(intensity),columns=['time','A','B','C','D'])
+
+cropcorr=corrfcts[corrfcts['delta_t']>=1e-6]
+cropcorr=cropcorr[cropcorr['delta_t']<=0.1]
+
+b=Parameters()
+b.add('N',value=0.9936,vary=False)
+b.add('D',value=426.8,vary=False)
+b.add('wxy',value=0.25,vary=True)
+b.add('wz',value=0.4,vary=True)
+
+out=minimize(g,b,args=(cropcorr['delta_t'],cropcorr['corrAB']))
+
+print b
+gfit=g(b,cropcorr['delta_t'])
+
+#plt.figure(1)
+#plt.semilogx(corrfcts['delta_t'],corrfcts['corrAB'],"or")
+#plt.xlabel('time in seconds')
+#plt.ylabel('g(t)')
+#plt.show()
+
+
+plt.figure()
+plt.title('Cross-correlation function')
+plt.semilogx(cropcorr['delta_t'],cropcorr['corrAB'],"or")
+plt.semilogx(cropcorr['delta_t'],gfit)
+plt.xlabel('delta t in sec')
+plt.ylabel('g(t)')
+plt.show()
