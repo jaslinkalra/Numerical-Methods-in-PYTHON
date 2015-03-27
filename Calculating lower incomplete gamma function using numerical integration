@@ -1,0 +1,45 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Apr 11 16:52:09 2014
+
+@author: Jaslin
+"""
+
+import numpy as np
+import math as m
+import scipy
+from scipy import integrate
+import matplotlib.pylab as plt
+
+
+
+def integrand(x,a):
+    return np.exp(-x)*x**(a-1)
+    
+def gammainc(x,a):
+    z=(scipy.integrate.quad(integrand,0.0,x,args=(a)))/scipy.special.gamma(a)
+#    print z
+    return z
+
+    
+a=5
+x=np.linspace(0,20,200)
+p=[]
+p1=[]
+for i in range(len(x)):
+    p_temp=gammainc(x[i],a)
+    p.append(1-p_temp[0])
+    p1_temp=scipy.special.gammainc(a,x[i]) 
+    p1.append(1-p1_temp)
+ 
+
+plt.plot(x,p,label='gamma_q')   #q-value from gamma function created here
+plt.plot(x,p1,label='gamma_q1') #q-value from built in function
+plt.title('Incomplete gamma functions', fontsize=18)
+plt.xlabel('x-values',fontsize=16)
+plt.ylabel('Probability',fontsize=16)
+legend(loc='lower right')
+
+
+#The lines overlap for both the functions indicating that both the functions
+# give similar values for incomplete gamma function when a=5, x=0 to 20.
