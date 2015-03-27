@@ -1,0 +1,68 @@
+f = open('data.txt','r')
+
+corrfuncdata = []   #creates list for correlation function data 
+avgintdata = []     #creates list for average intensity data
+flag = 0
+
+for line in f:
+    if line == '[RawCorrelationFunction]\n' or line == '\n' or line == '[Overflow]\n':
+        flag = 0
+        continue    #this conditional statement does not read data after recognizing
+                        #specific strings and continues the loop
+        
+    elif line == '[CorrelationFunction]\n':
+        flag = 1
+        continue    #creates a mark or location with a purpose to read data
+                        #after recognizing a specific string
+                           
+    elif line == '[IntensityHistory]\n':
+        flag = 2    
+        continue                          
+          
+    if flag == 1:
+        corrfuncdata.append(line.split())  #appends or adds data after the created flag 
+    elif flag == 2:                          #in the list assigned respectively
+        avgintdata.append(line.split())
+
+del avgintdata[0]       #deletes the first list which is of no value
+
+#print corrfuncdata
+#print avgintdata
+
+size = len(corrfuncdata)
+size1 = len(avgintdata)
+
+#print size
+#print size1
+    
+array1 = []             #creates 10 empty arrays to append the data entries later
+array2 = []
+array3 = []
+array4 = []
+array5 = []
+array6 = []
+array7 = []
+array8 = []
+array9 = []
+array10 =[]
+
+for i in range(size):   #creates a loop that extracts values from the first data list
+    array1.append(corrfuncdata[i][0])   #values extracted at 0th column in the nested list for every row and appended to array1
+    array2.append(corrfuncdata[i][1])
+    array3.append(corrfuncdata[i][2])
+    array4.append(corrfuncdata[i][3])
+    array5.append(corrfuncdata[i][4])
+        
+for s in array1,array2,array3,array4 and array5:
+    print s
+    
+        
+for i1 in range(size1):
+    array6.append(avgintdata[i1][0])
+    array7.append(avgintdata[i1][1])
+    array8.append(avgintdata[i1][2])
+    array9.append(avgintdata[i1][3])
+    array10.append(avgintdata[i1][4])
+        
+for s1 in array6,array7,array8,array9 and array10:
+    print s1
