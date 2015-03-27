@@ -1,0 +1,37 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Apr 02 18:38:32 2014
+
+@author: Jaslin
+"""
+
+import numpy as np
+import matplotlib.pylab as plt
+import scipy.optimize as opt
+from pylab import *
+
+def linefit(a,x,y,delta_y,sigma):
+    f=np.sum((np.square(y-a[0]-(a[1]*x)))/(2*sigma*sigma)-np.log(np.cosh(((y-a[0]-(a[1]*x))*delta_y)/(sigma*sigma))))
+  #  print f
+    return f
+    
+min=opt.fmin(linefit,[0,1],args=(x,y,delta_y,sigma)) 
+
+x = np.linspace(-5,5,11)
+a=np.random.randint(0,2,size=11)
+error=np.where(a,np.random.normal(-1,0.1,11),np.random.normal(1,0.1,11))
+y=2*x+error
+
+delta_y=1
+sigma=0.1
+
+
+
+yf = min[0]+ min[1]*x
+
+plt.plot(x,y,"or", label='data')
+plt.plot(x,yf, label='model')
+plt.title('Linear Regression',fontsize=18)
+plt.xlabel('x values', fontsize = 16)
+plt.ylabel('y values', fontsize = 16)
+legend(loc='lower right')
