@@ -1,0 +1,40 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Apr 18 14:28:21 2014
+
+@author: Jaslin
+"""
+
+import numpy as np
+import math as m
+import scipy
+from scipy import integrate
+import matplotlib.pylab as plt
+from pylab import *
+
+def f(y,t):
+    u=y[0]
+    v=y[1]
+#    print u
+    a = 1     #birth rate for rabbits
+    b = 0.1   #death rate for rabbits
+    c= 1.5    #death rate for foxes
+    d = 0.75  #birth rate for foxes
+    f1=a*u-b*u*v           #du/dt
+    f2=-c*v + d*(b*u*v)    #dv/dt
+    return [f1,f2]
+           
+uo = 10       #initial population of rabbits
+vo = 5        #initial population of foxes
+yo= [uo,vo]
+t=np.linspace(0,15,1000)
+
+y = scipy.integrate.odeint(f,yo,t)
+
+
+plt.plot(t,y[:,0],'b',label='Population of Rabbits')
+plt.plot(t,y[:,1],'g',label='Population of Foxes')
+plt.title('Predator-Prey Model',fontsize=18)
+plt.xlabel('Time',fontsize=16)
+plt.ylabel('Population',fontsize=16)
+legend(loc='upper right',fontsize=7)
