@@ -1,0 +1,64 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import chi2
+from pylab import *
+
+
+def linefit(x,y,sigma):
+
+    S = np.sum(1/(np.square(sigma)))
+    Sx = np.sum(x/(np.square(sigma)))
+    Sy = np.sum(y/np.square(sigma))
+    Sxx = np.sum(np.square(x)/np.square(sigma))
+    Sxy = np.sum((x*y)/np.square(sigma))
+    delta = (S*Sxx)-(np.square(Sx))
+    a = ((Sxx*Sy) -(Sx*Sxy))/delta
+    b = ((S*Sxy) - (Sx*Sy))/delta
+    sigma_a = np.sqrt(Sxx/delta)
+    sigma_b = np.sqrt(S/delta)
+    chisq = np.sum(np.square((y-a-b*x)/sigma))
+
+
+    return a,b,sigma_a,sigma_b,chisq
+
+x = np.linspace(-5,5,11)
+noise = np.random.normal(0,1.0,11)
+y = 2*x+noise
+sigma = np.ones(11)
+a,b,sigma_a,sigma_b,chisq = linefit(x,y,sigma)
+yf = a+ b*x
+
+figure(1)
+plt.plot(x,y,"or", label='data')
+plt.plot(x,yf, label='model')
+plt.title('Linear Regression',fontsize=18)
+plt.xlabel('x values', fontsize = 16)
+plt.ylabel('y values', fontsize = 16)
+legend(loc='lower right')
+
+#savefig('Straight_Line_Fit.png')
+
+chisq_data = []
+for i in range(1000):
+    x = np.linspace(-5,5,11)
+    noise = np.random.normal(0,1.0,11)
+    y = 2*x+noise
+    sigma = np.ones(11)
+    a,b,sigma_a,sigma_b,chisq = linefit(x,y,sigma)
+    chisq_data.append(chisq)
+
+chisq_data=np.array(chisq_data)
+
+figure(2)
+xgrid = np.linspace(0,35,70)
+lb = "Chi-squared with 9 degrees of freedom"
+plt.hist(chisq_data, bins=50, normed=True)
+plt.plot(xgrid, chi2.pdf(xgrid,9), 'k-', lw=2, label=lb)
+plt.title('Chi-squared distribution',fontsize=18)
+plt.xlabel('x', fontsize = 16)
+plt.ylabel('Probability Density', fontsize = 16)
+legend(loc='upper right',fontsize=12)
+
+#savefig('Chi_squared_distribution.png')
+plt.show()
